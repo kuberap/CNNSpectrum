@@ -1,0 +1,4 @@
+Best trial config: {'cnn1-out': 128, 'cnn1-kernel': 5, 'cnn1-dropout': 0.1, 'dense1_out': 32, 'dense1-dropout': 0.01, 'batch_size': 128, 'lr': 0.0005967170304453387, 'momentum': 0.95, 'p-rotation': 0, 'val_split': 0.1, 'max_epochs': 40}
+Best trial final validation loss: -0.7961310148239136
+Best trial final validation accuracy: 0.8671875
+

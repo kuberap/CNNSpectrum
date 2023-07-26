@@ -11,6 +11,8 @@ LABEL_DICT = {'/Data/zdroj_co': 0,
               '/Data/zdroj_co_cs': 6
               }
 # maximal training epochs in hyperparameter tunning
-MAX_OPTIM_EPOCHS = 10
-MAX_OPTIM_EPOCHS = 40
-OPT_MAX_SAMPLES  = 100
+MAX_EPOCHS = 100
+BATCH_SIZE = 32
+P_ROTATION = 0.3
+LR = 0.00041252074938882393/2 # test
+MOMENTUM = 0.9 #0.95

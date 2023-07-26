@@ -1,0 +1,16 @@
+40 epoch p-0.1,0.2,0.3,
+
+Best trial config: {'cnn1-out': 16, 'cnn1-kernel': 3, 'cnn1-dropout': 0.001, 'cnn2-out': 64, 'cnn2-kernel': 5, 'cnn2-dropout': 0.1, 'dense1_out': 1024, 'dense1-dropout': 0.01, 'batch_size': 128, 'lr': 0.001967181384271477, 'momentum': 0.95, 'p-rotation': 0.1, 'val_split': 0.1, 'max_epochs': 40}
+Best trial final validation loss: -0.8303026556968689
+Best trial final validation accuracy: 0.8932291865348816
+
+Best trial config: {'cnn1-out': 16, 'cnn1-kernel': 3, 'cnn1-dropout': 0.001, 'cnn2-out': 128, 'cnn2-kernel': 5, 'cnn2-dropout': 0.01, 'dense1_out': 512, 'dense1-dropout': 0.01, 'batch_size': 32, 'lr': 0.0003875578085546609, 'momentum': 0.95, 'p-rotation': 0.2, 'val_split': 0.1, 'max_epochs': 40}
+Best trial final validation loss: -0.8997183591127396
+Best trial final validation accuracy: 0.9427083730697632
+
+Best trial config: {'cnn1-out': 16, 'cnn1-kernel': 5, 'cnn1-dropout': 0.001, 'cnn2-out': 128, 'cnn2-kernel': 3, 'cnn2-dropout': 0.01, 'dense1_out': 1024, 'dense1-dropout': 0.001, 'batch_size': 32, 'lr': 0.00041252074938882393, 'momentum': 0.95, 'p-rotation': 0.3, 'val_split': 0.1, 'max_epochs': 40}
+Best trial final validation loss: -0.9153469254573187
+Best trial final validation accuracy: 0.953125
+
+
+train_method_f7fc6_00028   TERMINATED           64               5            0.001          128               5            0.1             1024              0.1               32   0.000801399            0         40          167.793     -0.896343    0.932292  │
