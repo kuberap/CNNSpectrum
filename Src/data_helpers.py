@@ -10,7 +10,7 @@ from sklearn.utils.class_weight import  compute_class_weight
 from sklearn.model_selection import train_test_split
 
 
-CHANNEL_LENGTH = 1024
+
 
 def channel_rate_parsing(data_array: np.array):
     """
@@ -35,6 +35,7 @@ def load_labeled_data(paths: dict, parse_file_function, maxdata_count=None):
     X = []
     y = []
     for path, label in paths.items():  # read all specified directories
+        # print(f">>>{path}")
         for index, file in enumerate(listdir(path),1):  # for each file in directory
             f_path = join(path, file)
             if isfile(f_path):
@@ -61,20 +62,21 @@ class SpectrumDataset(Dataset):
             self.X = self.transform(self.X)
         self.labels = torch.from_numpy(y) # id of label must be coded into sequences of [0,0,..,0,1,0,..0]
         self._titles = titles # filename where the given signal is stored
-        self.one_hot_coder = torch.eye(n=len(paths_dict)) # generate identity matrix of shape number of classes
+       # self.one_hot_coder = torch.eye(n=len(paths_dict)) # generate identity matrix of shape number of classes
         print(f"Loaded dataset contains:{len(self.labels)}")
         freq = [ 0 for i in paths_dict.values()]
         for label in self.labels:
             freq[label]+=1
         for i in range(len(freq)):
             print(f"Label:{i}\tfrequency:{freq[i]}\tweights:{self.w[i]}")
+        self.w = torch.from_numpy(self.w).float() # weights are used in model there must be set to float
 
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        return self.X[idx], self.one_hot_coder[self.labels[idx]]
+        return self.X[idx],  self.labels[idx]   #self.one_hot_coder[self.labels[idx]]
     @property
     def weights(self):
         """
@@ -90,20 +92,20 @@ class SpectrumDataset(Dataset):
         """
         return self._titles
 
-def train_test_dataset(dataset: SpectrumDataset, val_split=0.2, seed=42):
+def train_test_dataset_split(dataset: SpectrumDataset, test_split=0.2, seed=42):
     """
-    Splait dataset into training and testing subsets.
+    Split dataset into training and testing subsets.
     :param dataset:
-    :param val_split:
+    :param test_split:
     :param seed:
     :return:
     """
-    train_idx, test_idx = train_test_split(list(range(len(dataset))), test_size=val_split, random_state=seed)
+    train_idx, test_idx = train_test_split(list(range(len(dataset))), test_size=test_split, random_state=seed)
     return Subset(dataset, train_idx), Subset(dataset, test_idx)
 
 
 
-def roll_batched_channels(signals, left=-5, right=5):
+def roll_batched_channels(signals, left=-2, right=2):
     """
     Rotate batch of signals
     :param signals: 
@@ -117,7 +119,7 @@ def roll_batched_channels(signals, left=-5, right=5):
 
 
 
-def channel_statistics(dataset: SpectrumDataset):
+def channel_statistics(dataset: SpectrumDataset, num_channels):
     """
     Compute statistics mu and std over dataset.
     :param dataset:
@@ -127,9 +129,9 @@ def channel_statistics(dataset: SpectrumDataset):
     channel_sum_diff = torch.zeros((1))
     for channels_data, label in dataset:
         channel_sum += torch.sum(channels_data,dim=(1))
-    channel_mean = channel_sum / (len(dataset) * CHANNEL_LENGTH)
+    channel_mean = channel_sum / (len(dataset) * num_channels)
     for channels_data, label in dataset:
-        channel_sum_diff += (torch.sum(channels_data, dim=(1)) / CHANNEL_LENGTH - channel_mean) ** 2
+        channel_sum_diff += (torch.sum(channels_data, dim=(1)) / num_channels - channel_mean) ** 2
     channel_std = torch.sqrt(channel_sum_diff / len(dataset))
     print(f"Data set mean: {channel_mean}")
     print(f"Data set std: {channel_std}")
@@ -150,7 +152,7 @@ if __name__ == "__main__":
     # Data set mean: tensor([4.8696])
     # Data set std: tensor([3.1731])
     sdata = SpectrumDataset(paths_dict=label_dict, transform=transforms.Normalize((4.8696), (3.1731)))
-    channel_statistics(sdata)
+    channel_statistics(sdata, num_channels=1024)
 
 
     train_dataloader = DataLoader(sdata, batch_size=2, shuffle=False)

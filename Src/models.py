@@ -47,7 +47,9 @@ class CNN1Classifier(nn.Module):
                 in_channels=conf["in_channels"],
                 out_channels=conf["out_channels"],
                 kernel_size=conf["kernel_size"],
-                pool_size=conf["pool_size"])
+                pool_size=conf["pool_size"],
+                dropout=conf["dropout"]
+                )
             )
         self.flat = nn.Flatten()
         self.dense_modules = nn.ModuleList()
