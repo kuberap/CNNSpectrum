@@ -3,13 +3,14 @@ import json
 from functools import partial
 import pandas as pd
 import torch
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import Dataset, Subset, DataLoader
 import torchvision.transforms as transforms
 import torch.nn as nn
 
 from  run_7_classes_config import *
 
-from data_helpers import SpectrumDataset, train_test_dataset_split, roll_batched_channels
+from data_helpers import SpectrumDataset, train_test_dataset_split, roll_batched_channels, RotatedSpectrumDataset
 from models import CNN1Classifier
 def compute_flatten_size(cnn_config, input_length=1024, verbose=False):
     if verbose:
@@ -40,27 +41,28 @@ def create_net_config():
 
     cnn_conf = [
         {"in_channels": 1,
-         "out_channels": 16,
-         "kernel_size": 5,
+         "out_channels": 32,
+         "kernel_size": 3,
          "pool_size": 2,  # division by 2 is universal
          "dropout":  0.001
          },
-        {"in_channels": 16,  # must be the same as the output from the layer one
+        {"in_channels": 32,  # must be the same as the output from the layer one
          "out_channels": 128,
          "kernel_size": 3,
          "pool_size": 2,  # division by 2 is universal
-         "dropout": 0.01
+         "dropout": 0.001
          }
     ]
     flatten_size = compute_flatten_size(cnn_conf)
     dense_conf = [
         {"in": flatten_size,
-         "out": 1024,
+         "out": 256,
          "activation": True,
-         "dropout": 0.001,
+         "dropout": 0.05,
          },
+
         {
-            "in": 1024,# must be the same as the output from the layer one
+            "in": 256,# must be the same as the output from the layer one
             "out": len(LABEL_DICT),
             "activation": False,
             "dropout": None
@@ -78,9 +80,11 @@ def train_method(data_dir=None):
     # special hack
     remote_label_dict={data_dir+k:v for k,v in LABEL_DICT.items()}
 
-    spectredataset = SpectrumDataset(paths_dict=remote_label_dict, transform=transforms.Normalize((4.8696), (3.1731)))
+    spectredataset = SpectrumDataset(paths_dict=remote_label_dict, transform= None) #transforms.Normalize((4.8696), (3.1731)))
     train_dataset, test_dataset = train_test_dataset_split(spectredataset)
+    train_dataset = RotatedSpectrumDataset(train_dataset)
     train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+
     test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
     cnn_conf, dense_conf = create_net_config()
@@ -99,8 +103,9 @@ def train_method(data_dir=None):
         loss_fn = loss_fn.to(device)  # hodn na GPU i kriterialni funkci
 
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM)  # lr=0.0001
-
+    optimizer = torch.optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)  # lr=0.0001
+    scheduler = ReduceLROnPlateau(optimizer, 'min', verbose=True)
+    #optimizer = torch.optim.Adam(model.parameters(), lr=LR )  # lr=0.0001
     start_epoch = 0
 
     print("Start - learning")
@@ -135,6 +140,7 @@ def train_method(data_dir=None):
             train_epoch_steps+=1
         acc /= count
         loss_train/=train_epoch_steps
+
         results["train_acc"].append(acc.cpu().numpy())
         results["train_loss"].append(loss_train)
         print(f"Train>Epoch {epoch}/{MAX_EPOCHS}: model accuracy {acc * 100} loss:\t{loss_train}")
@@ -159,6 +165,7 @@ def train_method(data_dir=None):
 
         acc /= count
         loss_test/=test_epoch_steps
+        scheduler.step(loss_test)
         if max_test_acc < acc:  # kdyz je lepsi acc
             print("Save model")
             max_test_acc = acc

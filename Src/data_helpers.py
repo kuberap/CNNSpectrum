@@ -60,6 +60,12 @@ class SpectrumDataset(Dataset):
         self.X = torch.from_numpy(X).unsqueeze(1) # input data, ie. data on channels, we add one extra dimension, channel dimension=[samples,1,1024]
         if self.transform is not None:
             self.X = self.transform(self.X)
+        else:
+            x_min, _ = torch.min(self.X, dim=0 )
+            x_max, _ = torch.max(self.X, dim=0)
+            # print(x_min.shape)
+            self.X = (self.X - x_min) / (x_max - x_min)
+
         self.labels = torch.from_numpy(y) # id of label must be coded into sequences of [0,0,..,0,1,0,..0]
         self._titles = titles # filename where the given signal is stored
        # self.one_hot_coder = torch.eye(n=len(paths_dict)) # generate identity matrix of shape number of classes
@@ -91,6 +97,28 @@ class SpectrumDataset(Dataset):
         :return:
         """
         return self._titles
+
+class RotatedSpectrumDataset(Dataset):
+    def __init__(self, traindataset, left=-5, right=5, mult=5):
+        self.X = []
+        self.labels=[]
+        for x, y in traindataset:
+            self.X.append(x)
+            self.labels.append(y)
+            for i in range(mult):
+                rot = random.randint(left, right)
+                signal = torch.roll(x, shifts=rot, dims=1)
+                self.X.append(signal)
+                self.labels.append(y)
+        self.X=torch.stack(self.X)
+        self.labels=torch.stack(self.labels)
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.labels[idx]  # self.one_hot_coder[self.labels[idx]]
+
 
 def train_test_dataset_split(dataset: SpectrumDataset, test_split=0.2, seed=42):
     """

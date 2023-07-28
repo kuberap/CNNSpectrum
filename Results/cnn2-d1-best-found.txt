@@ -14,3 +14,43 @@ Best trial final validation accuracy: 0.953125
 
 
 train_method_f7fc6_00028   TERMINATED           64               5            0.001          128               5            0.1             1024              0.1               32   0.000801399            0         40          167.793     -0.896343    0.932292  │
+
+
+nejlepsi yatim dosayeny vysledek 97.5 acc
+pro konfiguraci
+ MAX_EPOCHS = 200
+BATCH_SIZE = 128
+P_ROTATION = 0.0
+LR =  0.00041252074938882393/2 # test
+MOMENTUM = 0.9 #0.95
+WEIGHT_DECAY = 1e-6
+
+cnn_conf = [
+        {"in_channels": 1,
+         "out_channels": 32,
+         "kernel_size": 3,
+         "pool_size": 2,  # division by 2 is universal
+         "dropout":  0.001
+         },
+        {"in_channels": 32,  # must be the same as the output from the layer one
+         "out_channels": 128,
+         "kernel_size": 3,
+         "pool_size": 2,  # division by 2 is universal
+         "dropout": 0.001
+         }
+    ]
+    flatten_size = compute_flatten_size(cnn_conf)
+    dense_conf = [
+        {"in": flatten_size,
+         "out": 256,
+         "activation": True,
+         "dropout": 0.05,
+         },
+
+        {
+            "in": 256,# must be the same as the output from the layer one
+            "out": len(LABEL_DICT),
+            "activation": False,
+            "dropout": None
+         }
+    ]

@@ -29,7 +29,7 @@ class DenseBlock(nn.Module):
             nn.Linear(input_size, output_size),
         )
         if activation:
-            self.dense.add_module("relu", nn.ReLU())
+            self.dense.add_module("relu", nn.LeakyReLU() ) #nn.ReLU()
         if dropout is not None:
             self.dense.add_module("dropout", nn.Dropout(dropout))
 
