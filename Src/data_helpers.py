@@ -54,6 +54,9 @@ class SpectrumDataset(Dataset):
     Dataset of measured signals
     """
     def __init__(self, paths_dict, parse_file_function=channel_rate_parsing, transform=None, maxdata_count=None):
+        """
+        If no transformation is given min-max scaling is used.
+        """
         X, y, titles = load_labeled_data(paths_dict, parse_file_function=parse_file_function, maxdata_count=maxdata_count)
         self.transform = transform
         self.w = compute_class_weight("balanced",y=y,classes=[ i for i in paths_dict.values()]) # weights of classes
@@ -97,6 +100,14 @@ class SpectrumDataset(Dataset):
         :return:
         """
         return self._titles
+
+    @property
+    def X_data(self):
+        return self.X
+
+    @property
+    def y_data(self):
+        return self.labels
 
 class RotatedSpectrumDataset(Dataset):
     def __init__(self, traindataset, left=-5, right=5, mult=5):
