@@ -23,16 +23,13 @@ import classification_reporter as reporter
 CHANNEL_LENGTH = 1024
 
 # dictionary with paths
-LABEL_DICT = {'/Data/zdroj_co': 0,
-              '/Data/zdroj_cs': 1,
-              '/Data/zdroj_eu_152': 2,
-              '/Data/zdroj_th_232': 3,
-              '/Data/zdroj_u_238': 4,
-              '/Data/zdroj_am_241': 5,
-              '/Data/zdroj_co_cs': 6
+LABEL_DICT = {
+              '/Data/pozadi': 0,
+              '/Data/zdroj_co': 1,
+              '/Data/zdroj_cs': 2,
               }
 
-MAX_EPOCHS = 200 # maximal training epochs
+MAX_EPOCHS = 20 # maximal training epochs
 BATCH_SIZE =  128 # 128 and 256 are very close in acc
 LR = 0.0001 # 0.00041252074938882393/2 # test
 MOMENTUM = 0.9 #0.95
@@ -42,13 +39,28 @@ WEIGHT_DECAY = 1e-6
 SPLITS = 5
 
 # report parameters
-TARGET_NAMES = ['CO', 'CS', 'EU', 'TH', 'U', 'AM', 'COCS']  # class names for report
+TARGET_NAMES = ["BG", 'CO', 'CS']  # class names for report
 NUM_CLASSES = len(TARGET_NAMES)
-TASK_NAME = 'SOURCE_DIFFERENTIATE_CO_CS_EU_TH_U_AM_COCS'
-TASK_DESCRIPTION = 'SOURCES CO_CS_EU_TH_U_AM_COCS LABELS 0,1,2,3,4,5,6.'
+TASK_NAME = 'DIFFERENTIATE_BG_CO_CS'
+TASK_DESCRIPTION = 'BG CO_CS LABELS 0,1,2'
 REPORT_OUTPUT_PATH = f'../Results/report-{TASK_NAME}.txt'  # zde je ulozena statistika ulohy
 RESULTS_OUTPUT_PATH = f'../Results/result-'  # zde jsou vysledky jednotlivych volani
 
+
+
+
+def draw_average_class_spectrum(X: np.array, y: np.array):
+    import matplotlib.pyplot as plt
+    print(X.shape)
+    rows, columns = X.shape
+    plt.figure(figsize=(10, 8), dpi=100)
+    for i,l in enumerate(TARGET_NAMES):
+        xavg = np.mean(X[y == i], axis=0)
+        plt.plot(xavg, label=f'{l}')
+    plt.title(f'Mean over spectrum:{TASK_NAME}')
+    plt.grid()
+    plt.legend()
+    plt.show()
 
 
 def compute_flatten_size(cnn_config, input_length=1024, verbose=False):
@@ -230,7 +242,9 @@ def kfold_validation(data_dir=None):
     spectredataset = SpectrumDataset(paths_dict=remote_label_dict, transform = None) #use minmax normalization <=>transform=None
     cnn_conf, dense_conf = create_net_config() # create configuration for building neural network
     skf = StratifiedKFold(n_splits=SPLITS)
-
+    # ----------drawing-----
+    # draw_average_class_spectrum(spectredataset.X_data.numpy().squeeze(), spectredataset.y_data.numpy())
+    # exit(0)
     # ------------ priprava reportu dat------------------
     report_data = {'TASK': TASK_NAME, 'DESCRIPTION': TASK_DESCRIPTION}
     report_data['LABEL_DATA_PATH'] = LABEL_DICT  # zapis i cesty a i pouzite labely

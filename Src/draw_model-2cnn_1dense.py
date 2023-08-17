@@ -91,7 +91,11 @@ def train_method(data_dir=None):
 
     cnn_conf, dense_conf = create_net_config()
     model = CNN1Classifier(cnn_config=cnn_conf, dense_config=dense_conf)
-
+    from torchview import draw_graph
+    model_graph = draw_graph(model, input_size=(BATCH_SIZE, 1,1024), device='meta')
+    print(type(model_graph.visual_graph))
+    model_graph.visual_graph.save("model.dot")
+    exit(-1)
     loss_fn = nn.NLLLoss(spectredataset.weights)
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")

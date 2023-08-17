@@ -28,8 +28,8 @@ LABEL_DICT = {'/Data/zdroj_co': 0,
               '/Data/zdroj_eu_152': 2,
               '/Data/zdroj_th_232': 3,
               '/Data/zdroj_u_238': 4,
-              '/Data/zdroj_am_241': 5,
-              '/Data/zdroj_co_cs': 6
+             # '/Data/zdroj_am_241': 5,
+              '/Data/zdroj_co_cs': 5
               }
 
 MAX_EPOCHS = 200 # maximal training epochs
@@ -42,10 +42,10 @@ WEIGHT_DECAY = 1e-6
 SPLITS = 5
 
 # report parameters
-TARGET_NAMES = ['CO', 'CS', 'EU', 'TH', 'U', 'AM', 'COCS']  # class names for report
+TARGET_NAMES = ['CO', 'CS', 'EU', 'TH', 'U', 'COCS']  # class names for report
 NUM_CLASSES = len(TARGET_NAMES)
-TASK_NAME = 'SOURCE_DIFFERENTIATE_CO_CS_EU_TH_U_AM_COCS'
-TASK_DESCRIPTION = 'SOURCES CO_CS_EU_TH_U_AM_COCS LABELS 0,1,2,3,4,5,6.'
+TASK_NAME = 'SOURCE_DIFFERENTIATE_CO_CS_EU_TH_U_COCS'
+TASK_DESCRIPTION = 'SOURCES CO_CS_EU_TH_U_COCS LABELS 0,1,2,3,4,5,.'
 REPORT_OUTPUT_PATH = f'../Results/report-{TASK_NAME}.txt'  # zde je ulozena statistika ulohy
 RESULTS_OUTPUT_PATH = f'../Results/result-'  # zde jsou vysledky jednotlivych volani
 

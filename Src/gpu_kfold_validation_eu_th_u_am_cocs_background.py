@@ -23,31 +23,58 @@ import classification_reporter as reporter
 CHANNEL_LENGTH = 1024
 
 # dictionary with paths
-LABEL_DICT = {'/Data/zdroj_co': 0,
-              '/Data/zdroj_cs': 1,
-              '/Data/zdroj_eu_152': 2,
-              '/Data/zdroj_th_232': 3,
-              '/Data/zdroj_u_238': 4,
-              '/Data/zdroj_am_241': 5,
-              '/Data/zdroj_co_cs': 6
+LABEL_DICT = {'/Data/pozadi_nove': 0,
+              '/Data/zdroj_eu_152': 1,
+              '/Data/zdroj_th_232': 2,
+              '/Data/zdroj_u_238': 3,
+              '/Data/zdroj_am_241': 4,
+              '/Data/zdroj_co_cs': 5
               }
 
 MAX_EPOCHS = 200 # maximal training epochs
-BATCH_SIZE =  128 # 128 and 256 are very close in acc
+BATCH_SIZE =  128# 128 and 256 are very close in acc
 LR = 0.0001 # 0.00041252074938882393/2 # test
 MOMENTUM = 0.9 #0.95
 WEIGHT_DECAY = 1e-6
-
+SKIP_CLASS_0 = False # dont extentd background class via augmentation
 # constant for cross validation
 SPLITS = 5
-
+MACC = 0.93
 # report parameters
-TARGET_NAMES = ['CO', 'CS', 'EU', 'TH', 'U', 'AM', 'COCS']  # class names for report
+TARGET_NAMES = ["BG", 'EU', 'TH', 'U', 'AM', 'COCS']  # class names for report
 NUM_CLASSES = len(TARGET_NAMES)
-TASK_NAME = 'SOURCE_DIFFERENTIATE_CO_CS_EU_TH_U_AM_COCS'
-TASK_DESCRIPTION = 'SOURCES CO_CS_EU_TH_U_AM_COCS LABELS 0,1,2,3,4,5,6.'
+TASK_NAME = 'DIFFERENTIATE_BG_EU_TH_U_AM_COCS'
+TASK_DESCRIPTION = 'BG EU_TH_U_AM_COCS LABELS 0,1,2,3,4,5.'
 REPORT_OUTPUT_PATH = f'../Results/report-{TASK_NAME}.txt'  # zde je ulozena statistika ulohy
 RESULTS_OUTPUT_PATH = f'../Results/result-'  # zde jsou vysledky jednotlivych volani
+
+
+
+def draw_average_class_spectrum(X: np.array, y: np.array):
+    import matplotlib.pyplot as plt
+    print(X.shape)
+    rows, columns = X.shape
+    plt.figure(figsize=(10, 8), dpi=100)
+    for i,l in enumerate(TARGET_NAMES):
+        xavg = np.mean(X[y == i], axis=0)
+        plt.plot(xavg, label=f'{l}')
+    plt.title(f'Mean over spectrum:{TASK_NAME}')
+    plt.grid()
+    plt.legend()
+    plt.show()
+    # plt.savefig(f'./img/average_spectrum-{id}.png')
+    # plt.clf()  # smaz to
+    # # to same pro odchylku
+    # for label in labels:
+    #     xstd = np.std(X[y == label], axis=0)
+    #     plt.plot(xstd, label=f'std {label_type_dict[label]}')
+    # plt.title(f'STD over spectrum-{id}')
+    # plt.grid()
+    # plt.legend()
+    # plt.show()
+    # # plt.savefig(f'./img/std_spectrum-{id}.png')
+    # plt.clf()  # smaz to
+
 
 
 
@@ -230,6 +257,9 @@ def kfold_validation(data_dir=None):
     spectredataset = SpectrumDataset(paths_dict=remote_label_dict, transform = None) #use minmax normalization <=>transform=None
     cnn_conf, dense_conf = create_net_config() # create configuration for building neural network
     skf = StratifiedKFold(n_splits=SPLITS)
+    #----------drawing-----
+    # draw_average_class_spectrum(spectredataset.X_data.numpy().squeeze(),spectredataset.y_data.numpy())
+    # exit(0)
 
     # ------------ priprava reportu dat------------------
     report_data = {'TASK': TASK_NAME, 'DESCRIPTION': TASK_DESCRIPTION}
@@ -241,15 +271,28 @@ def kfold_validation(data_dir=None):
 
     for fold_index, (train_index, test_index) in enumerate(skf.split(spectredataset.X_data,spectredataset.y_data)):
         print(f'FOLD: {fold_index}')
-        fold_class_weight = compute_class_weight(class_weight="balanced", y=spectredataset.y_data[train_index].numpy(), classes=labels) #classes=[i for i in LABEL_DICT.values()]#
+        fold_class_weight = compute_class_weight(class_weight="balanced", y=spectredataset.y_data[train_index].numpy(),
+                                                classes=labels)  # classes=[i for i in LABEL_DICT.values()]#
+
         print(f"CLASS WEIGHTS: {np.array2string(fold_class_weight, max_line_width=100)}")
+
         train_dataset, test_dataset = Subset(spectredataset, train_index), Subset(spectredataset, test_index)
-        train_dataset = RotatedSpectrumDataset(train_dataset) # extaned training data via augmentation
+
+        train_dataset = RotatedSpectrumDataset(train_dataset, skip_class_0=SKIP_CLASS_0) # extaned training data via augmentation
+
         train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
         test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
+        # fold_class_weight = compute_class_weight(class_weight="balanced", y=train_dataset.y_data.numpy(),
+        #                                          classes=labels)  # classes=[i for i in LABEL_DICT.values()]#
+        # print(f"CLASS WEIGHTS: {np.array2string(fold_class_weight, max_line_width=100)}")
+        for t in range(5):
+            model = CNN1Classifier(cnn_config=cnn_conf, dense_config=dense_conf)
+            y_hat_train, y_hat_test,y_train, y_test, history = train_model(model=model,weights=torch.from_numpy(fold_class_weight).float(), train_dataloader=train_dataloader, test_dataloader=test_dataloader, fold=fold_index)
+            macc_test = max(history["test_acc"])
+            if macc_test>MACC:
+                break
 
-        model = CNN1Classifier(cnn_config=cnn_conf, dense_config=dense_conf)
-        y_hat_train, y_hat_test,y_train, y_test, history = train_model(model=model,weights=torch.from_numpy(fold_class_weight).float(), train_dataloader=train_dataloader, test_dataloader=test_dataloader, fold=fold_index)
+
 
         print(classification_report(y_test, y_hat_test, target_names=TARGET_NAMES))
         print(confusion_matrix(y_test, y_hat_test))

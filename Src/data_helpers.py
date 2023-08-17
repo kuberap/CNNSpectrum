@@ -110,12 +110,14 @@ class SpectrumDataset(Dataset):
         return self.labels
 
 class RotatedSpectrumDataset(Dataset):
-    def __init__(self, traindataset, left=-5, right=5, mult=5):
+    def __init__(self, traindataset, left=-5, right=5, mult=5, skip_class_0=False):
         self.X = []
         self.labels=[]
         for x, y in traindataset:
             self.X.append(x)
             self.labels.append(y)
+            if skip_class_0 and y == 0:
+                continue
             for i in range(mult):
                 rot = random.randint(left, right)
                 signal = torch.roll(x, shifts=rot, dims=1)
@@ -129,6 +131,14 @@ class RotatedSpectrumDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.X[idx], self.labels[idx]  # self.one_hot_coder[self.labels[idx]]
+
+    @property
+    def X_data(self):
+        return self.X
+
+    @property
+    def y_data(self):
+        return self.labels
 
 
 def train_test_dataset_split(dataset: SpectrumDataset, test_split=0.2, seed=42):
